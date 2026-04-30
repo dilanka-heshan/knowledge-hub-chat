@@ -1,0 +1,1 @@
+ // Q&A pairs (mirrors your qa_pairs structure)
