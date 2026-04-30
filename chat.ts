@@ -84,6 +84,9 @@ function sendMessage(query: string): Promise<string> {
               } else if (event.type === "visualization_hint") {
                 process.stdout.write(`\n[Chart: ${event.data as string}]`);
 
+              } else if (event.type === "document_ready") {
+                process.stdout.write("\n[Document ready — open http://localhost:3001/dev/last-doc.html to view]");
+
               } else if (event.type === "done") {
                 process.stdout.write("\n");
                 resolve(fullText);
@@ -190,5 +193,6 @@ async function main() {
     }
   }
 }
+
 
 main();

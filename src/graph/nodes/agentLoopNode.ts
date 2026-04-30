@@ -116,7 +116,7 @@ const ACKNOWLEDGEMENTS = [
 ];
 
 function getAcknowledgement(): string {
-  return ACKNOWLEDGEMENTS[Math.floor(Math.random() * ACKNOWLEDGEMENTS.length)];
+  return ACKNOWLEDGEMENTS[Math.floor(Math.random() * ACKNOWLEDGEMENTS.length)] ?? "On it!";
 }
 
 // ── Confirmation detection ────────────────────────────────────────────────────
@@ -240,7 +240,26 @@ export async function agentLoopNode(state: GraphStateType) {
       : fullResponse;
 
     console.log(`[AgentLoop] Complete — ${rawResults.length} tool result(s)`);
-    console.log(`[AgentLoop] Response preview: "${fullResponse.substring(0, 100)}..."`);
+    console.log(`[AgentLoop] Response preview: "${finalResponse.substring(0, 100)}..."`);
+
+    // Extract HTML — find where HTML starts, take everything from there.
+    // Doesn't require </html> to be present (Claude sometimes omits it).
+    const lower    = finalResponse.toLowerCase();
+    const startIdx = lower.indexOf("<!doctype") >= 0 ? lower.indexOf("<!doctype") : lower.indexOf("<html");
+    let documentHtml = "";
+    if (startIdx >= 0) {
+      documentHtml = finalResponse.slice(startIdx).replace(/\s*```\s*$/, "").trim();
+    }
+    console.log(`[AgentLoop] HTML check: startIdx=${startIdx}, found=${documentHtml.length > 0}`);
+
+    if (documentHtml) {
+      console.log("[AgentLoop] HTML document detected — routing to document_ready");
+      const outDir = path.resolve("data");
+      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(path.join(outDir, "last-doc.html"), documentHtml, "utf-8");
+      console.log("[AgentLoop] Saved → http://localhost:3001/dev/last-doc.html");
+      return { rawResults, documentHtml, fullResponse: "" };
+    }
 
     return { rawResults, fullResponse: finalResponse };
   } finally {
