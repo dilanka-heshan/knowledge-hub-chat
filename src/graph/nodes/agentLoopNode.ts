@@ -12,6 +12,8 @@ import type { GraphStateType }                                 from "../state";
 import type { StepResult }                                     from "../../types";
 import { buildMcpTools }                                       from "../../mcp/mcpClientFactory";
 import { findHint }                                            from "../../temp/qaHints";
+import fs                                                      from "fs";
+import path                                                    from "path";
 
 // ── System prompt builder ─────────────────────────────────────────────────────
 
@@ -94,6 +96,7 @@ function buildSystemPrompt(hint: string | null, summary: string): string {
     "- Be concise and professional in your response",
     "- Format numbers clearly (e.g., '65 km/h', '78% fuel level')",
     "- Never mention internal system steps, tool names, or SQL in your response",
+    "- If the user asks for a report, PDF, Word document, or any downloadable file: respond with a complete HTML document only — no explanation, no markdown, just raw HTML starting with <!DOCTYPE html>. Include <meta name=\"render-as\" content=\"pdf\"> (or docx) and <meta name=\"title\" content=\"...\"> in the <head>.",
   );
 
   return parts.join("\n");
@@ -205,7 +208,7 @@ export async function agentLoopNode(state: GraphStateType) {
     modelName:     process.env.OPENROUTER_MODEL ?? "anthropic/claude-sonnet-4-6",
     apiKey:        process.env.OPENROUTER_API_KEY ?? "",
     configuration: { baseURL: "https://openrouter.ai/api/v1" },
-    maxTokens:     1000,
+    maxTokens:     8000,
   });
 
   // 4. Build clean conversation history for the agent
@@ -237,7 +240,7 @@ export async function agentLoopNode(state: GraphStateType) {
       : fullResponse;
 
     console.log(`[AgentLoop] Complete — ${rawResults.length} tool result(s)`);
-    console.log(`[AgentLoop] Response preview: "${finalResponse.substring(0, 100)}..."`);
+    console.log(`[AgentLoop] Response preview: "${fullResponse.substring(0, 100)}..."`);
 
     return { rawResults, fullResponse: finalResponse };
   } finally {

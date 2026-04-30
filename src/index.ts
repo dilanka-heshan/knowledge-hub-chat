@@ -3,6 +3,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { chatRouter } from "./routes/chat";
 import { reportsRouter } from "./routes/reports";
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use("/api/chat", chatRouter);
 app.use("/api/reports", reportsRouter);
+app.use("/dev", express.static(path.resolve("data")));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
