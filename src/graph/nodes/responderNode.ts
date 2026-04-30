@@ -20,7 +20,12 @@ export function createResponderNode(res: Response) {
 
     let fullResponse = "";
 
-    if (state.fullResponse) {
+    if (state.documentHtml) {
+      // Claude returned a full HTML document — send as document_ready event
+      sendSSE(res, { type: "text_chunk", data: "Your document is ready." });
+      sendSSE(res, { type: "document_ready", data: state.documentHtml });
+      fullResponse = "document";
+    } else if (state.fullResponse) {
       // Agent already generated the answer via createReactAgent — stream it directly.
       // Split into ~80-char chunks to give the frontend a progressive feel.
       const CHUNK = 80;

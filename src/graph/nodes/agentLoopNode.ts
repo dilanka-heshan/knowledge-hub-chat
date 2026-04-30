@@ -15,6 +15,8 @@ import type { GraphStateType }                                 from "../state";
 import type { StepResult }                                     from "../../types";
 import { buildMcpTools }                                       from "../../mcp/mcpClientFactory";
 import { findHint }                                            from "../../temp/qaHints";
+import fs                                                      from "fs";
+import path                                                    from "path";
 
 // ── System prompt builder (QA hint passed as guidance, not forced steps) ─────
 
@@ -56,6 +58,7 @@ function buildSystemPrompt(hint: string | null, summary: string): string {
     "- Be concise and professional in your response",
     "- Format numbers clearly (e.g., '65 km/h', '78% fuel level')",
     "- Do not mention internal system steps or tool names in your response",
+    "- If the user asks for a report, PDF, Word document, or any downloadable file: respond with a complete HTML document only — no explanation, no markdown, just raw HTML starting with <!DOCTYPE html>. Include <meta name=\"render-as\" content=\"pdf\"> (or docx) and <meta name=\"title\" content=\"...\"> in the <head>.",
   );
 
   return parts.join("\n");
@@ -116,7 +119,7 @@ export async function agentLoopNode(state: GraphStateType) {
     modelName:     process.env.OPENROUTER_MODEL ?? "anthropic/claude-sonnet-4-6",
     apiKey:        process.env.OPENROUTER_API_KEY ?? "",
     configuration: { baseURL: "https://openrouter.ai/api/v1" },
-    maxTokens:     1000,
+    maxTokens:     8000,
   });
 
   // 4. Build conversation history messages
@@ -140,6 +143,18 @@ export async function agentLoopNode(state: GraphStateType) {
     const { rawResults, fullResponse } = extractFromAgentResult(result);
     console.log(`[AgentLoop] Complete — ${rawResults.length} tool result(s)`);
     console.log(`[AgentLoop] Response preview: "${fullResponse.substring(0, 100)}..."`);
+
+    // Detect if Claude returned a full HTML document
+    const trimmed = fullResponse.trimStart();
+    const isDocument = trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html");
+    if (isDocument) {
+      console.log("[AgentLoop] HTML document detected — routing to document_ready");
+      const outDir = path.resolve("data");
+      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(path.join(outDir, "last-doc.html"), fullResponse, "utf-8");
+      console.log("[AgentLoop] Saved to data/last-doc.html — view at http://localhost:3001/dev/last-doc.html");
+      return { rawResults, documentHtml: fullResponse, fullResponse: "" };
+    }
 
     return { rawResults, fullResponse };
   } finally {

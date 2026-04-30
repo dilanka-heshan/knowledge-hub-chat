@@ -52,6 +52,12 @@ export const GraphState = Annotation.Root({
     value:   overwrite<string>,
     default: (): string => "",
   }),
+
+  // set by agentLoopNode when Claude returns a full HTML document
+  documentHtml: Annotation<string>({
+    value:   overwrite<string>,
+    default: (): string => "",
+  }),
 });
 
 export type GraphStateType = typeof GraphState.State;
