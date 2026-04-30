@@ -58,6 +58,13 @@ export const GraphState = Annotation.Root({
     value:   overwrite<string>,
     default: (): string => "",
   }),
+
+  // true when agentLoopNode has already streamed tokens directly to res
+  // responderNode skips text_chunk loop in this case
+  alreadyStreamed: Annotation<boolean>({
+    value:   overwrite<boolean>,
+    default: (): boolean => false,
+  }),
 });
 
 export type GraphStateType = typeof GraphState.State;

@@ -3,7 +3,7 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 import type { Response } from "express";
 import { GraphState }           from "./state";
-import { agentLoopNode }        from "./nodes/agentLoopNode";
+import { createAgentLoopNode }  from "./nodes/agentLoopNode";
 import { filterNode }           from "./nodes/filterNode";
 import { createResponderNode }  from "./nodes/responderNode";
 
@@ -16,7 +16,7 @@ import { createResponderNode }  from "./nodes/responderNode";
 
 export function buildAgentGraph(res: Response) {
   return new StateGraph(GraphState)
-    .addNode("agentLoop", agentLoopNode)
+    .addNode("agentLoop", createAgentLoopNode(res))
     .addNode("filter",    filterNode)
     .addNode("responder", createResponderNode(res))
     .addEdge(START,        "agentLoop")

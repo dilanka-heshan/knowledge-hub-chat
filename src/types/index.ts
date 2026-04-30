@@ -103,6 +103,7 @@ export type SSEEventType =
   | "sources"              // which data sources were used
   | "visualization_hint"   // tell frontend what chart to render
   | "report_ready"         // report file is downloadable
+  | "document_ready"       // full HTML document for PDF/Word download
   | "error"
   | "done";
 
